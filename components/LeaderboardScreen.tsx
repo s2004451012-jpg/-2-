@@ -35,7 +35,7 @@ const LeaderboardScreen: React.FC = () => {
               </div>
               <div className="flex-grow ml-4">
                 <p className="font-bold text-slate-800 truncate">
-                  {user.email === currentUser?.email ? `${user.email.split('@')[0]} (あなた)` : user.email.split('@')[0]}
+                  {user.email === currentUser?.email ? 'あなた' : user.email.split('@')[0]}
                 </p>
               </div>
               <div className="flex items-center font-bold text-yellow-500">

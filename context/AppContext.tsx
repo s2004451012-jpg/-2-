@@ -11,111 +11,66 @@ const getYesterdayDateString = () => {
   return yesterday.toISOString().split('T')[0];
 };
 
-// --- Mock Database in LocalStorage ---
-const DB_USERS_KEY = 'db-users';
-const SESSION_USER_KEY = 'session-user-email';
+// --- Single User in LocalStorage ---
+const APP_USER_KEY = 'app-user';
 
-const getMockUsers = (): User[] => {
-  const users = localStorage.getItem(DB_USERS_KEY);
-  if (users) {
-    return JSON.parse(users);
-  }
-  // Create some initial users for the leaderboard
-  const initialUsers: User[] = [
+// Mock users for the leaderboard, excluding the main player
+const MOCK_LEADERBOARD_USERS: User[] = [
     { email: 'master@test.com', xp: 1250, streak: 15, lastQuizDate: getYesterdayDateString(), history: [] },
     { email: 'pro@test.com', xp: 880, streak: 8, lastQuizDate: getTodayDateString(), history: [] },
     { email: 'rookie@test.com', xp: 210, streak: 3, lastQuizDate: getYesterdayDateString(), history: [] },
-  ];
-  localStorage.setItem(DB_USERS_KEY, JSON.stringify(initialUsers));
-  return initialUsers;
+];
+
+const getAppUser = (): User => {
+  const userStr = localStorage.getItem(APP_USER_KEY);
+  if (userStr) {
+    return JSON.parse(userStr);
+  }
+  // Create a default user if none exists
+  const defaultUser: User = {
+    email: 'player@app.com', // A default identifier
+    xp: 0,
+    streak: 0,
+    lastQuizDate: null,
+    history: [],
+  };
+  localStorage.setItem(APP_USER_KEY, JSON.stringify(defaultUser));
+  return defaultUser;
 };
 
-const saveMockUsers = (users: User[]) => {
-  localStorage.setItem(DB_USERS_KEY, JSON.stringify(users));
+const saveAppUser = (user: User) => {
+  localStorage.setItem(APP_USER_KEY, JSON.stringify(user));
 };
+
 
 // --- App Context ---
 interface AppContextType {
   language: Language;
   setLanguage: (language: Language) => void;
-  currentUser: User | null;
+  currentUser: User;
   leaderboard: User[];
-  login: (email: string, password?: string) => boolean;
-  register: (email: string, password?: string) => boolean;
-  logout: () => void;
   addResultToHistory: (result: Omit<QuizResult, 'date'>) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [allUsers, setAllUsers] = useState<User[]>(getMockUsers);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [currentUser, setCurrentUser] = useState<User>(getAppUser);
   const [language, setLanguageState] = useState<Language>(() => {
     return (localStorage.getItem('app-language') as Language) || Language.JA;
   });
-
-  // Check for active session on initial load
-  useEffect(() => {
-    const sessionEmail = localStorage.getItem(SESSION_USER_KEY);
-    if (sessionEmail) {
-      const user = allUsers.find(u => u.email === sessionEmail);
-      if (user) {
-        setCurrentUser(user);
-      }
-    }
-  }, []);
 
   const setLanguage = (lang: Language) => {
     localStorage.setItem('app-language', lang);
     setLanguageState(lang);
   };
   
-  const updateUserAndSession = (updatedUser: User) => {
-      const newAllUsers = allUsers.map(u => u.email === updatedUser.email ? updatedUser : u);
-      setAllUsers(newAllUsers);
-      saveMockUsers(newAllUsers);
+  const updateUser = (updatedUser: User) => {
+      saveAppUser(updatedUser);
       setCurrentUser(updatedUser);
   }
 
-  const login = (email: string, password?: string): boolean => {
-    const user = allUsers.find(u => u.email === email);
-    if (user) {
-      setCurrentUser(user);
-      localStorage.setItem(SESSION_USER_KEY, email);
-      return true;
-    }
-    return false;
-  };
-
-  const register = (email: string, password?: string): boolean => {
-    if (allUsers.some(u => u.email === email)) {
-      return false; // User already exists
-    }
-    const newUser: User = {
-      email,
-      password,
-      xp: 0,
-      streak: 0,
-      lastQuizDate: null,
-      history: [],
-    };
-    const newAllUsers = [...allUsers, newUser];
-    setAllUsers(newAllUsers);
-    saveMockUsers(newAllUsers);
-    setCurrentUser(newUser);
-    localStorage.setItem(SESSION_USER_KEY, email);
-    return true;
-  };
-
-  const logout = () => {
-    setCurrentUser(null);
-    localStorage.removeItem(SESSION_USER_KEY);
-  };
-
   const addResultToHistory = (result: Omit<QuizResult, 'date'>) => {
-    if (!currentUser) return;
-
     const today = getTodayDateString();
     let newStreak = currentUser.streak;
 
@@ -140,13 +95,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         history: [newResult, ...currentUser.history].slice(0, 10),
     }
 
-    updateUserAndSession(updatedUser);
+    updateUser(updatedUser);
   };
 
-  const leaderboard = [...allUsers].sort((a, b) => b.xp - a.xp);
+  const leaderboard = [...MOCK_LEADERBOARD_USERS, currentUser].sort((a, b) => b.xp - a.xp);
 
   return (
-    <AppContext.Provider value={{ language, setLanguage, currentUser, leaderboard, login, register, logout, addResultToHistory }}>
+    <AppContext.Provider value={{ language, setLanguage, currentUser, leaderboard, addResultToHistory }}>
       {children}
     </AppContext.Provider>
   );

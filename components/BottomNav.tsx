@@ -1,8 +1,7 @@
 
 import React from 'react';
 import { AppScreen } from '../types';
-import { Home, Trophy, LogOut } from 'lucide-react';
-import { useAppContext } from '../context/AppContext';
+import { Home, Trophy } from 'lucide-react';
 
 interface BottomNavProps {
   currentScreen: AppScreen;
@@ -29,8 +28,6 @@ const NavItem: React.FC<{
 };
 
 const BottomNav: React.FC<BottomNavProps> = ({ currentScreen, setCurrentScreen }) => {
-  const { logout } = useAppContext();
-  
   const isNavVisible = [AppScreen.Home, AppScreen.Leaderboard].includes(currentScreen);
   if (!isNavVisible) return null;
 
@@ -47,12 +44,6 @@ const BottomNav: React.FC<BottomNavProps> = ({ currentScreen, setCurrentScreen }
         icon={<Trophy className="w-6 h-6" />}
         isActive={currentScreen === AppScreen.Leaderboard}
         onClick={() => setCurrentScreen(AppScreen.Leaderboard)}
-      />
-      <NavItem
-        label="ログアウト"
-        icon={<LogOut className="w-6 h-6" />}
-        isActive={false}
-        onClick={logout}
       />
     </nav>
   );

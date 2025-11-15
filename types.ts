@@ -20,9 +20,6 @@ export interface QuizResult {
 
 export interface User {
   email: string;
-  // In a real application, this would be a securely hashed password.
-  // For this prototype, we'll store it as plain text.
-  password?: string;
   xp: number;
   streak: number;
   lastQuizDate: string | null; // YYYY-MM-DD format
@@ -36,7 +33,6 @@ export enum Language {
 }
 
 export enum AppScreen {
-  Auth = 'auth',
   Home = 'home',
   Quiz = 'quiz',
   Results = 'results',
